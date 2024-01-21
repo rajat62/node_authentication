@@ -11,6 +11,7 @@ const AuthRoute = require("./Routes/auth.route");
 // Declarations
 const PORT = process.env.PORT || 8000;
 const app = express();
+app.use(express.json());
 app.use(morgan("dev"));
 
 // Routes
@@ -20,10 +21,6 @@ app.get("/", async(req, res, next)=>{
 app.use("/auth/", AuthRoute);
 
 app.use(async(req, res, next)=>{
-    // const error = new Error("Not Found");
-    // error.status = 404;
-    // next(error);
-
     next(createError.NotFound("This route does not exist"));
 })
 app.use((error, req, res, next)=>{
