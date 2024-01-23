@@ -6,7 +6,7 @@ require("dotenv").config();
 require("./Helpers/init_mogodb")
 
 const AuthRoute = require("./Routes/auth.route"); 
-
+const {verifyAccessToken} = require("./Helpers/jwt_helper");
 
 // Declarations
 const PORT = process.env.PORT || 8000;
@@ -15,7 +15,9 @@ app.use(express.json());
 app.use(morgan("dev"));
 
 // Routes
-app.get("/", async(req, res, next)=>{
+app.get("/",verifyAccessToken, async(req, res, next)=>{
+    
+
     res.json({message: "hello world"})
 })
 app.use("/auth/", AuthRoute);

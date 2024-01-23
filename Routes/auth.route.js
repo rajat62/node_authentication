@@ -3,7 +3,7 @@ const createError = require("http-errors");
 const router  = express.Router();
 const User = require("../Models/user.model");
 const {authSchema} = require("../Helpers/validation_schema");
-const {signAccessToken} = require("../Helpers/jwt_helper");
+const {signAccessToken, signRefreshToken, verifyRefreshToken} = require("../Helpers/jwt_helper");
 
 router.post("/register", async(req, res, next)=>{
     try {
@@ -21,7 +21,8 @@ router.post("/register", async(req, res, next)=>{
                 const savedUser = await user.save();
 
                 const accessToken = await signAccessToken(savedUser.id);
-                res.send( {accessToken});
+                const refreshToken = await signRefreshToken(savedUser.id);
+                res.send( {accessToken, refreshToken});
             }
     } catch (error) {
         if(error.isJoi === true) error.status = 422;
@@ -41,8 +42,9 @@ router.post("/login", async(req, res, next)=>{
 
         if(!isMatch) throw createError.Unauthorized('Username/password are not valid');
 
-        const accesstoken = await signAccessToken(oldUser.id)
-        res.send({accesstoken})
+        const accesstoken = await signAccessToken(oldUser.id);
+        const refreshToken = await signRefreshToken(oldUser.id);
+        res.send({accesstoken, refreshToken})
 
     } catch (error) {
         if(error.isJoi === true) return next(createError.BadRequest("invalid username/password"));
@@ -52,7 +54,20 @@ router.post("/login", async(req, res, next)=>{
 
 })
 router.post("/refresh-token", async(req, res, next)=>{
-    res.send("refresh-token route");
+
+    try {
+        const {refreshToken} = req.body; 
+        if(!refreshToken) throw createError.BadRequest();
+
+        const userId = await verifyRefreshToken(refreshToken);
+        
+        const newAccessToken = await signAccessToken(userId);
+        const newRefreshToken = await signRefreshToken(userId);
+
+        res.send({accessToken :newAccessToken,refreshToken: newRefreshToken});
+    } catch (error) {
+        next(error);
+    }
 })
 
 router.delete("/logout", async(req, res, next)=>{
