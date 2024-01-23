@@ -1,6 +1,6 @@
 const jwt = require("jsonwebtoken");
 const createError = require("http-errors");
-
+const client  = require("./int_redis");
 
 module.exports = {
     signAccessToken: (userId)=>{
@@ -42,7 +42,7 @@ module.exports = {
         })
     },
     signRefreshToken: (userId)=>{
-        return new Promise((resolve, reject)=>{
+        return new Promise( (resolve, reject)=>{
             const secret = process.env.REFRESH_TOKEN_SECRET;
             const options= {
                 expiresIn:'1y',
@@ -51,8 +51,22 @@ module.exports = {
                 if(err) {
                     console.log(err.message);
                     reject(createError.InternalServerError())
+                }else{
+
+                    (async()=>{
+                        await 
+                        client.SET(userId, token, {EX: 60*60*24*365},(err, reply)=>{
+                            if(err) {
+                                console.log(err.message);
+                                reject(createError.InternalServerError());
+                                return
+                            }
+                            
+                        });
+                    })()
+                    resolve(token);
                 }
-                resolve(token);
+
             })
             
         })
@@ -65,8 +79,21 @@ module.exports = {
                     return reject(createError.Unauthorized());
                 }
                 const userId = payload.name;
+
+                (async()=>{
+                    await client.GET(userId, (err, res)=>{
+                        if(err) {
+                            console.log(err.message);
+                            reject(createError.InternalServerError());
+                            return 
+                        }
+                        if(refreshToken === res){
+                            return
+                        }
+                        reject(createError.Unauthorized())
+                    })
+                })()
                 resolve(userId);
-                
             });
         })
         

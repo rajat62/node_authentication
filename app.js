@@ -7,6 +7,7 @@ require("./Helpers/init_mogodb")
 
 const AuthRoute = require("./Routes/auth.route"); 
 const {verifyAccessToken} = require("./Helpers/jwt_helper");
+require("./Helpers/int_redis");
 
 // Declarations
 const PORT = process.env.PORT || 8000;
